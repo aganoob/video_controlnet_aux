@@ -47,6 +47,8 @@ def main(
 
         print("video resized to 512 height")
 
+        audioclip = clip_resized.audio
+
         # Opens the Video file with CV2
         cap = cv2.VideoCapture(video_path)
 
@@ -66,7 +68,7 @@ def main(
         cv2.destroyAllWindows()
         print("broke the video into frames")
 
-        return frames, fps
+        return frames, fps, audioclip
 
     def get_openpose_filter(i, preprocesser_model):
         image = Image.open(i)
@@ -81,9 +83,11 @@ def main(
         image.save(path)
         return path
 
-    def create_video(frames, fps, type):
+    def create_video(frames, fps, type, audioclip=None):
         print("building video result")
         clip = ImageSequenceClip(frames, fps=fps)
+        if audioclip:
+            clip = clip.set_audio(audioclip)
         path = os.path.join(output_path, type + "_result.mp4")
         clip.write_videofile(path, fps=fps)
 
@@ -95,12 +99,11 @@ def main(
         clip.write_videofile(path)
         return path
 
-    def infer(video_in, preprocesser_model):
+    def infer(video_in, preprocesser_model="densepose"):
         initDetector(preprocesser_model)
         # 1. break video into frames and get FPS
-        break_vid = get_frames(video_in)
-        frames_list = break_vid[0]
-        fps = break_vid[1]
+        frames_list, fps, audioclip = get_frames(video_in)
+
         # n_frame = int(trim_value*fps)
         n_frame = len(frames_list)
 
@@ -117,7 +120,7 @@ def main(
             result_frames.append(openpose_frame)
             print("frame " + i + "/" + str(n_frame) + ": done;")
 
-        final_vid = create_video(result_frames, fps, preprocesser_model)
+        final_vid = create_video(result_frames, fps, preprocesser_model, audioclip=audioclip)
 
         files = [final_vid]
 
@@ -266,92 +269,84 @@ def main(
             with gr.Row():
                 with gr.Column():
                     video_input = gr.Video(
-                        value=input_path if not input_path.endswith(".gif") else None,
-                    )
-                    gif_input = gr.File(
-                        label="import a GIF instead",
-                        file_types=[".gif"],
-                        value=input_path if input_path.endswith(".gif") else None,
-                    )
-                    gif_input.change(
-                        fn=convertG2V, inputs=gif_input, outputs=video_input
+                        value=None,
                     )
                     submit_btn = gr.Button("Submit")
 
                 with gr.Column():
                     video_output = gr.Video()
                     file_output = gr.Files()
-                    # type_choice = gr.Radio(
-                    #     choices=[
-                    #         "All",
-                    #         "Openpose",
-                    #         "Depth",
-                    #         "Line",
-                    #         "Segment",
-                    #         "Blur",
-                    #         "Recolor",
-                    #     ],
-                    #     value="All",
-                    #     label="Type",
-                    # )
-                    model_choice = gr.Radio(
-                        choices=[
-                            "animal_openpose",
-                            "densepose",
-                            "densepose_normal",
-                            "dw_openpose",
-                            "dw_openpose_face",
-                            "dw_openpose_faceonly",
-                            "dw_openpose_full",
-                            "dw_openpose_hand",
-                            "mediapipe_face",
-                            "openpose",
-                            "openpose_face",
-                            "openpose_faceonly",
-                            "openpose_full",
-                            "depth_leres",
-                            "depth_leres++",
-                            "depth_midas",
-                            "depth_zoe",
-                            "normal_bae",
-                            "normal_midas",
-                            "anime_face_segment",
-                            "oneformer_ade20k",
-                            "oneformer_coco",
-                            "sam",
-                            "uniformer_ufade20k",
-                            "tile",
-                            "binary",
-                            "canny",
-                            "lineart_anime",
-                            "lineart_coarse",
-                            "lineart_realistic",
-                            "mlsd",
-                            "scribble",
-                            "scribble_hed",
-                            "scribble_hedsafe",
-                            "scribble_pidinet",
-                            "scribble_pidsafe",
-                            "scribble_xdog",
-                            "softedge_hed",
-                            "softedge_hedsafe",
-                            "softedge_pidinet",
-                            "softedge_pidsafe",
-                        ],
-                        value="densepose",
-                        type="value",
-                        label="Preprocesser",
-                    )
+        #             # type_choice = gr.Radio(
+        #             #     choices=[
+        #             #         "All",
+        #             #         "Openpose",
+        #             #         "Depth",
+        #             #         "Line",
+        #             #         "Segment",
+        #             #         "Blur",
+        #             #         "Recolor",
+        #             #     ],
+        #             #     value="All",
+        #             #     label="Type",
+        #             # )
+        #             model_choice = gr.Radio(
+        #                 choices=[
+        #                     "animal_openpose",
+        #                     "densepose",
+        #                     "densepose_normal",
+        #                     "dw_openpose",
+        #                     "dw_openpose_face",
+        #                     "dw_openpose_faceonly",
+        #                     "dw_openpose_full",
+        #                     "dw_openpose_hand",
+        #                     "mediapipe_face",
+        #                     "openpose",
+        #                     "openpose_face",
+        #                     "openpose_faceonly",
+        #                     "openpose_full",
+        #                     "depth_leres",
+        #                     "depth_leres++",
+        #                     "depth_midas",
+        #                     "depth_zoe",
+        #                     "normal_bae",
+        #                     "normal_midas",
+        #                     "anime_face_segment",
+        #                     "oneformer_ade20k",
+        #                     "oneformer_coco",
+        #                     "sam",
+        #                     "uniformer_ufade20k",
+        #                     "tile",
+        #                     "binary",
+        #                     "canny",
+        #                     "lineart_anime",
+        #                     "lineart_coarse",
+        #                     "lineart_realistic",
+        #                     "mlsd",
+        #                     "scribble",
+        #                     "scribble_hed",
+        #                     "scribble_hedsafe",
+        #                     "scribble_pidinet",
+        #                     "scribble_pidsafe",
+        #                     "scribble_xdog",
+        #                     "softedge_hed",
+        #                     "softedge_hedsafe",
+        #                     "softedge_pidinet",
+        #                     "softedge_pidsafe",
+        #                 ],
+        #                 value="densepose",
+        #                 type="value",
+        #                 label="Preprocesser",
+        #             )
 
-        # type_choice.change(
-        #     fn=update_radio,
-        #     inputs=[type_choice, model_choice],
-        #     outputs=[model_choice],
-        # )
+        # # type_choice.change(
+        # #     fn=update_radio,
+        # #     inputs=[type_choice, model_choice],
+        # #     outputs=[model_choice],
+        # # )
 
         submit_btn.click(
             fn=infer,
-            inputs=[video_input, model_choice],
+            inputs=[video_input],
             outputs=[video_output, file_output],
         )
 
