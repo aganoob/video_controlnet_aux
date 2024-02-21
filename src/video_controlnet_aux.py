@@ -18,8 +18,8 @@ DENSEPOSE_MODEL_NAME = "LayerNorm/DensePose-TorchScript-with-hint-image"
 
 
 def main(
-    input_path="",
-    output_path="",
+    input_path="./",
+    output_path="./",
 ):
     def initDetector(preprocesser_model):
         global processor
