@@ -7,7 +7,7 @@ from controlnet_aux.processor import Processor
 import os
 import cv2
 from PIL import Image
-from moviepy.editor import VideoFileClip, ImageSequenceClip
+from moviepy.editor import *
 import argparse
 import re
 
@@ -89,9 +89,62 @@ def main(
         if audioclip:
             clip = clip.set_audio(audioclip)
         path = os.path.join(output_path, type + "_result.mp4")
+
+        # squarify
+        print("Squarifying...")
+        clip = squarify_video_zoom_crop(clip, scale=1.4)
+
         clip.write_videofile(path, fps=fps)
 
         return path
+
+    def squarify_video_paddings(clip):
+        # simply add paddings on the sides of the vertical clip
+
+        # Calculate padding size
+        width, height = clip.size
+        padding_width = (height - width) // 2
+
+        # Create padding clips
+        padding_color = tuple(map(lambda x: int(x * 255), (0.267, 0.005, 0.329)))  # Viridis colormap zero
+        left_padding = ColorClip(size=(padding_width, height), color=padding_color, duration=clip.duration)
+        right_padding = ColorClip(size=(padding_width, height), color=padding_color, duration=clip.duration)
+
+        # Create a square video with specific color paddings
+        final_clip = CompositeVideoClip([left_padding.set_position((0,0)),
+                                        clip.set_position((padding_width,0)),
+                                        right_padding.set_position((width + padding_width,0))],
+                                        size=(height, height))
+
+        # Export the video
+        return final_clip
+
+    def squarify_video_zoom_crop(clip, scale=1.3):
+        # add paddings on the sides of the vertical clip
+        # and apply zooming in
+
+        final_clip = squarify_video_paddings(clip)
+
+        # Calculate current size
+        width, height = final_clip.size
+
+        # Scale up
+        final_clip = final_clip.resize(scale)
+
+        # Calculate new center
+        w_new, h_new = final_clip.size
+        x_center, y_center = w_new // 2, h_new // 2
+
+        # Crop by the original size
+        final_clip = final_clip.crop(
+            x_center=x_center,
+            y_center=y_center,
+            width=width,
+            height=height
+        )
+
+        # Export the video
+        return final_clip
 
     def convertG2V(imported_gif):
         clip = VideoFileClip(imported_gif.name)
