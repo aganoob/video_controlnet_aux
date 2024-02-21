@@ -361,7 +361,7 @@ def main(
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "-i", "--input_path", type=str, default="./inputs/cai-xukun.mp4"
+        "-i", "--input_path", type=str
     )
     parser.add_argument("-o", "--output_path", type=str, default="./outputs/")
     args = parser.parse_args()
