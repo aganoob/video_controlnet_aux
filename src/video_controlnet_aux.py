@@ -18,8 +18,8 @@ DENSEPOSE_MODEL_NAME = "LayerNorm/DensePose-TorchScript-with-hint-image"
 
 
 def main(
-    input_path="./inputs/cai-xukun.mp4",
-    output_path="./outputs/",
+    input_path="",
+    output_path="",
 ):
     def initDetector(preprocesser_model):
         global processor
@@ -355,7 +355,7 @@ def main(
             outputs=[video_output, file_output],
         )
 
-    demo.launch()
+    demo.launch(share=True)
 
 
 if __name__ == "__main__":
