@@ -119,7 +119,7 @@ def main(
         # Export the video
         return final_clip
 
-    def squarify_video_zoom_crop(clip, scale=1.3):
+    def squarify_video_zoom_crop(clip, scale=1.3, resize_to=(512, 512)):
         # add paddings on the sides of the vertical clip
         # and apply zooming in
 
@@ -142,6 +142,7 @@ def main(
             width=width,
             height=height
         )
+        final_clip = final_clip.resize(newsize=resize_to)
 
         # Export the video
         return final_clip
